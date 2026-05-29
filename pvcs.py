@@ -1,14 +1,5 @@
 import os
 
-
-# 파일 생성
-
-
-
-
-
-
-
 class Pvcs:
     # 디렉토리 위치 설정
     def __init__(self):
@@ -16,7 +7,7 @@ class Pvcs:
         self.CONFIGDIR = ".pvcsconfig"  # 추적하는 파일
         self.IGNOREDIR = ".pvcsignore"  # 무시할 파일
 
-    # 리포 초기화
+    # 디렉토리 생성
     @staticmethod
     def createdirs(filepath):
         if not os.path.exists(filepath):
@@ -29,7 +20,7 @@ class Pvcs:
             file = open(filepath, "w")
             file.close()
 
-    # filepath 파일에서 compvalue가 있나 검사
+    # filepath 파일에서 compvalue를 검색
     @staticmethod
     def check_line_from_file(filepath, target):
         if not os.path.exists(filepath):
@@ -48,6 +39,7 @@ class Pvcs:
                 return True
         return False
 
+    # filepath에 new_line 추가
     @staticmethod
     def add_line_into_file(filepath, new_line):
         if not os.path.exists(filepath):
