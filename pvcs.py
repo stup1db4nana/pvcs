@@ -82,6 +82,22 @@ class Pvcs:
 
         return scanned_files
 
+    def get_tracked_files(self, pwd="."):
+        scanned_files = []
+
+        for path, subdir, file in os.walk(pwd):
+            subdir[:] = [d for d in subdir if d != self.HISTDIR]
+
+            for i in file:
+                combined_path = os.path.normpath(os.path.join(path, i))
+
+                if not self.check_ignore_status(i, 1) and not self.check_ignore_status(path,
+                                                                                       0) and self.check_tracking_status(
+                    combined_path):
+                    scanned_files.append(combined_path)
+
+        return scanned_files
+
     # 작업중
     def check_for_changes(self):
         return False
@@ -93,7 +109,7 @@ class Pvcs:
         foldername = foldername.replace(".", "-")
 
         commit_path = os.path.join(self.HISTDIR, foldername)
-        commit_files = self.scan_pwd()
+        commit_files = self.get_tracked_files()
         print(commit_path, commit_files)
 
         if not commit_files:
