@@ -24,7 +24,7 @@ class Pvcs:
 
     # filepath 파일에서 compvalue를 검색
     @staticmethod
-    def check_line_from_file(filepath, target):
+    def check_line_from_file(filepath, target, mode = 1):
         if not os.path.exists(filepath):
             return False
 
@@ -36,9 +36,13 @@ class Pvcs:
                 if not line.strip() or line.startswith("#"):
                     continue
             # 경로 노말라이즈
-            normal_line = os.path.normpath(line.strip())
-            if normal_target == normal_line:
-                return True
+                normal_line = os.path.normpath(line.strip())
+                if mode == 1:
+                    if normal_target == normal_line:
+                        return True
+                else:
+                    if normal_target.startswith(normal_line):
+                        return True
         return False
 
     # filepath에 new_line 추가
@@ -50,9 +54,39 @@ class Pvcs:
             file.write("\n" + new_line)
             return None
 
+    # 파일이 추적중인 경우 참, 아니면 거짓
+    def check_tracking_status(self, filepath):
+        normal_target = os.path.normpath(filepath)
+        return self.check_line_from_file(self.CONFIGDIR, normal_target)
+
+    # 파일이 무시된 경우 참, 아니면 거짓
+    def check_ignore_status(self, filepath, mode):
+        normal_target = os.path.normpath(filepath)
+        return self.check_line_from_file(self.IGNOREDIR, normal_target, mode)
+
+    # 닷파일 제외 디렉토리 검사
+    def scan_pwd(self, pwd="."):
+        scanned_files = []
+
+        for path, subdir, file in os.walk(pwd):
+            subdir[:] = [d for d in subdir if d != self.HISTDIR]
+
+            for i in file:
+                combined_path = os.path.normpath(os.path.join(path, i))
+
+                if not self.check_ignore_status(i, 1) and not self.check_ignore_status(path, 0):
+                    scanned_files.append(combined_path)
+
+        return scanned_files
+
+
+
 if __name__ == "__main__":
     vcs = Pvcs()
     vcs.createdirs(vcs.HISTDIR)
     vcs.createfile(vcs.CONFIGDIR)
     vcs.createfile(vcs.IGNOREDIR)
-    vcs.add_line_into_file(vcs.CONFIGDIR, ".hello")
+
+    # print(vcs.check_line_from_file(vcs.IGNOREDIR, ".idea", 0))
+
+    print(vcs.scan_pwd())
