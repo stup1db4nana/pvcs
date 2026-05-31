@@ -1,6 +1,9 @@
 import os
+import datetime
+import shutil
 
-# 추가해야 할 사항: 파일 복사, 디렉토리 복사(파일복사와 함계 코밋시 파일 저장), 파일 변경점 검사, 히스트에서 파일 되돌리기
+
+# 추가해야 할 사항: 코밋, 파일 복사, 디렉토리 복사(파일복사와 함계 코밋시 파일 저장), 파일 변경점 검사, 히스트에서 파일 되돌리기
 
 class Pvcs:
     # 디렉토리 위치 설정
@@ -11,20 +14,20 @@ class Pvcs:
 
     # 디렉토리 생성
     @staticmethod
-    def createdirs(filepath):
+    def create_dirs(filepath):
         if not os.path.exists(filepath):
             os.makedirs(filepath)
 
     # 파일 생성
     @staticmethod
-    def createfile(filepath):
+    def create_file(filepath):
         if not os.path.exists(filepath):
             file = open(filepath, "w")
             file.close()
 
-    # filepath 파일에서 compvalue를 검색
+    # filepath 파일에서 compvalue를 검색 모드가 1일 경우 완전 일치, 0일 경우 시작하는 줄에 포함
     @staticmethod
-    def check_line_from_file(filepath, target, mode = 1):
+    def check_line_from_file(filepath, target, mode=1):
         if not os.path.exists(filepath):
             return False
 
@@ -35,7 +38,7 @@ class Pvcs:
                 # 공백 샵 무시
                 if not line.strip() or line.startswith("#"):
                     continue
-            # 경로 노말라이즈
+                # 경로 노말라이즈
                 normal_line = os.path.normpath(line.strip())
                 if mode == 1:
                     if normal_target == normal_line:
@@ -79,14 +82,35 @@ class Pvcs:
 
         return scanned_files
 
+    # 작업중
+    def check_for_changes(self):
+        return False
+
+    #
+    def commit(self):
+        foldername = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        foldername = foldername.replace(":", "-")
+        foldername = foldername.replace(".", "-")
+
+        commit_path = os.path.join(self.HISTDIR, foldername)
+        commit_files = self.scan_pwd()
+        print(commit_path, commit_files)
+
+        if not commit_files:
+            return False
+
+        for i in commit_files:
+            hist_path = os.path.join(commit_path, i)
+            self.create_dirs(os.path.dirname(hist_path))
+
+            shutil.copy2(i, hist_path)
+        return True
 
 
 if __name__ == "__main__":
     vcs = Pvcs()
-    vcs.createdirs(vcs.HISTDIR)
-    vcs.createfile(vcs.CONFIGDIR)
-    vcs.createfile(vcs.IGNOREDIR)
+    vcs.create_dirs(vcs.HISTDIR)
+    vcs.create_file(vcs.CONFIGDIR)
+    vcs.create_file(vcs.IGNOREDIR)
 
-    # print(vcs.check_line_from_file(vcs.IGNOREDIR, ".idea", 0))
-
-    print(vcs.scan_pwd())
+    vcs.commit()
