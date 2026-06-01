@@ -163,6 +163,16 @@ class Pvcs:
         print("debuginfo: checkout complete")
         return True
 
+    @staticmethod
+    def read_from_file(filepath):
+        if not os.path.exists(filepath):
+            print("debuginfo: read task failed!", filepath, " does not exist")
+            return False
+        with open(filepath, "r") as f:
+            file_content = f.read()
+
+        return file_content
+
 
 if __name__ == "__main__":
     vcs = Pvcs()

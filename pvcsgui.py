@@ -157,6 +157,15 @@ class PvcsGui:
 
         filepath = values[0]
 
+        file_content = self.vcs.read_from_file(filepath)
+        if not file_content:
+            self.code.delete("1.0", tk.END)
+            self.code.insert(tk.END, f"파일을 열 수 없음")
+            
+        self.code.delete("1.0", tk.END)
+        self.code.insert(tk.END, file_content)
+        self.current_file = filepath
+        '''
         try:
             with open(filepath, "r") as f:
                 data = f.read()
@@ -169,6 +178,7 @@ class PvcsGui:
         except Exception as e:
             self.code.delete("1.0", tk.END)
             self.code.insert(tk.END, f"파일을 열 수 없음: {e}")
+        '''
 
     def commitgui(self):
         sel = self.tree.selection()
