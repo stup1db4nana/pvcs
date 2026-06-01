@@ -134,9 +134,11 @@ class PvcsGui:
 
         if os.path.exists(commit_dir):
             commits = sorted(os.listdir(commit_dir))
+            print("test 1", commits)
 
             for c in commits:
                 self.commit_list.insert(tk.END, c)
+                print("test 2", c)
 
     def add_track(self, filepath):
         self.vcs.add_line_into_file(self.vcs.CONFIGDIR, filepath)

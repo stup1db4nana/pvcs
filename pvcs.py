@@ -161,6 +161,7 @@ class Pvcs:
         print("debuginfo: checkout complete")
         return True
 
+    # filepth 내용 읽기(바이너리 지원)
     @staticmethod
     def read_from_file(filepath):
         if not os.path.exists(filepath):
@@ -171,8 +172,19 @@ class Pvcs:
 
         return file_content
 
+    # filepath 첫줄에 new_line 추가
+    @staticmethod
+    def insert_into_firstline(filepath, new_line):
+        if not os.path.exists(filepath):
+            print("debuginfo: insert_firstline failure! file does not exist")
+            return False
+        with open(filepath, "r", errors="replace") as f:
+            origin_content = f.read()
+        with open(filepath, "w") as f:
+            f.write("[commit message]: " + new_line + "\n" + origin_content)
+        return True
 
-''' 테스트용
+
 if __name__ == "__main__":
     vcs = Pvcs()
     vcs.create_dirs(vcs.HISTDIR)
@@ -183,4 +195,4 @@ if __name__ == "__main__":
     # vcs.check_for_changes()
     # vcs.commit()
     # vcs.checkout("2026-06-01T07-02-29-383304+00-00")
-'''
+    vcs.insert_into_firstline("testtest", "hello!")
