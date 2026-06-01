@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 import os
 import datetime
+import filecmp
 
 
 class PvcsGui:
@@ -160,27 +161,31 @@ class PvcsGui:
         untracked = self.vcs.scan_pwd()
         tracked = self.vcs.get_tracked_files()
 
+        # 최신 커밋 폴더 찾기 (pvcs.py의 check_for_changes 로직 반영)
+        latest_commit = None
+        if os.path.exists(self.vcs.HISTDIR) and os.listdir(self.vcs.HISTDIR):
+            sorted_commit_list = sorted(os.listdir(self.vcs.HISTDIR))
+            latest_commit = os.path.join(self.vcs.HISTDIR, sorted_commit_list[-1])
+
         for f in tracked:
             if keyword and keyword not in f.lower():
                 continue
             
-            # 파일 훼손(변경) 여부 판단 로직 추가
-            # 만약 Pvcs 클래스 내부에 자체적인 변경 판단 메서드가 있다면 그것을 우선 사용하도록 설계
             is_modified = False
-            if hasattr(self.vcs, 'check_modified'):
-                is_modified = self.vcs.check_modified(f)
-            else:
-                # 자체 메서드가 없는 경우, Pvcs의 메커니즘을 기반으로 유연하게 확인하거나 
-                # commitgui에서 저장 메커니즘을 유추하여 무결성(훼손 여부)을 판별할 수 있습니다.
-                # 여기서는 GUI 상에서 유연하게 대응하도록 안전 코드로 구현해 둡니다.
-                try:
-                    # 임시 구현: 최신 커밋 파일과 현재 파일의 메타데이터나 크기/내용 비교가 필요할 때 활용 가능
-                    # 기본적으로 훼손되지 않았다면 🟢, 훼손(수정) 상태가 감지되면 🔴가 뜹니다.
-                    pass
-                except Exception:
-                    pass
+            
+            # 최신 커밋 버전이 존재할 때 파일 내용 비교 진행
+            if latest_commit and os.path.exists(f):
+                comp_file = os.path.join(latest_commit, f)
+                if os.path.exists(comp_file):
+                    # filecmp.cmp는 두 파일이 완전히 같으면 True, 다르면 False를 리턴합니다.
+                    # 따라서 결과가 False이면 파일이 변경(훼손)된 것입니다.
+                    if not filecmp.cmp(comp_file, f, shallow=False):
+                        is_modified = True
+                else:
+                    # 커밋 폴더는 생성되었으나 해당 파일 백업본이 없는 경우도 변경(새 파일)으로 간주
+                    is_modified = True
 
-            # 훼손/변경 상태에 따른 아이콘 조건문
+            # 훼손 상태에 따른 분기 표시
             if is_modified:
                 self.tree.insert("", tk.END, text=f"🔴 {os.path.basename(f)}", values=(f,))
             else:
