@@ -105,6 +105,7 @@ class Pvcs:
     def check_for_changes(self):
         if not os.path.exists(self.HISTDIR) or not os.listdir(self.HISTDIR):
             return False
+        changed_files = ""
 
         sorted_commit_list = sorted(os.listdir(self.HISTDIR))
         latest_commit = os.path.join(self.HISTDIR, sorted_commit_list[-1])
@@ -114,9 +115,13 @@ class Pvcs:
 
         for i in current_files:
             comp_file = os.path.join(latest_commit, i)
-            test = filecmp.cmp(comp_file, i)
-            print("debuginfo: diff between current and", latest_commit, i, test)
-        return False
+            is_changed = filecmp.cmp(comp_file, i)
+            if not is_changed:
+                changed_files = ''.join(i)
+            print("debuginfo: diff between current and", latest_commit, i, is_changed)
+
+        print("debuginfo: list of changed files", changed_files)
+        return changed_files
 
     # 추적중인 파일을 iso날자로 구분해 hist에 디렉토리 째로 저장.
     def commit(self):
