@@ -94,9 +94,7 @@ class Pvcs:
             for i in file:
                 combined_path = os.path.normpath(os.path.join(path, i))
 
-                if not self.check_ignore_status(i, 1) and not self.check_ignore_status(path,
-                                                                                       0) and self.check_tracking_status(
-                    combined_path):
+                if self.check_tracking_status(combined_path):
                     print("debuginfo: scan ", combined_path)
                     scanned_files.append(combined_path)
 
@@ -157,6 +155,8 @@ if __name__ == "__main__":
     vcs.create_dirs(vcs.HISTDIR)
     vcs.create_file(vcs.CONFIGDIR)
     vcs.create_file(vcs.IGNOREDIR)
+
+    vcs.get_tracked_files()
 
     # vcs.commit()
     # vcs.checkout("2026-06-01T07-02-29-383304+00-00")
