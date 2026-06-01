@@ -171,6 +171,6 @@ if __name__ == "__main__":
     vcs.create_file(vcs.IGNOREDIR)
 
     # vcs.get_tracked_files()
-    vcs.check_for_changes()
+    # vcs.check_for_changes()
     # vcs.commit()
     # vcs.checkout("2026-06-01T07-02-29-383304+00-00")
