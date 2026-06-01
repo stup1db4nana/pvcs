@@ -30,7 +30,8 @@ class PvcsGui:
         main.pack(fill=tk.BOTH, expand=True)
 
         left = ttk.Frame(main)
-        main.add(left, weight=1, minsize=200)
+        main.add(left, weight=1)
+        main.pane(left, minsize=200)
 
         btn_frame = ttk.Frame(left)
         btn_frame.pack(fill=tk.X)
@@ -74,7 +75,8 @@ class PvcsGui:
         self.tree.bind("<<TreeviewSelect>>", self.on_select)
 
         right = ttk.Frame(main)
-        main.add(right, weight=3, minsize=100)
+        main.add(right, weight=3)
+        main.pane(right, minsize=100)
 
         self.code = tk.Text(right, font=("Consolas", 11), undo=True)
         self.code.pack(fill=tk.BOTH, expand=True)
