@@ -11,6 +11,7 @@ import shutil
 """
 Track file 버튼 Checkout 버튼 및 기능 구현
 Track file Refresh Checkout Commit버튼 재배치
+파일 선택 후 파일 수정 기능 구현
 """
 
 class PvcsGui:
@@ -96,6 +97,7 @@ class PvcsGui:
         
         filepath = values[0]
 
+        print("TRACK CLICK:", filepath)
         # 이미 tracked면 무시
         if self.vcs.check_tracking_status(filepath):
             self.history.insert(tk.END, "already tracked\n")
@@ -103,6 +105,11 @@ class PvcsGui:
         
         # tracked 등록
         self.vcs.add_line_into_file(self.vcs.CONFIGDIR, filepath)
+
+        print("CONFIG AFTER TRACK:")
+        with open(self.vcs.CONFIGDIR, "r") as f:
+            print(f.read())
+
         self.history.insert(tk.END, f"tracked: {filepath}\n")
         self.refresh_files()
 
@@ -112,6 +119,9 @@ class PvcsGui:
 
         untracked = self.vcs.scan_pwd()
         tracked = self.vcs.get_tracked_files()
+
+        print("UNTRACKED:", untracked)
+        print("TRACKED:", tracked)
 
         for f in tracked:
             self.tree.insert("", tk.END, text=f"☑ {f}", values=(f,))
@@ -157,11 +167,25 @@ class PvcsGui:
             self.code.delete("1.0", tk.END)
             self.code.insert(tk.END, data)
 
+            self.current_file = filepath
+
         except Exception as e:
             self.code.delete("1.0", tk.END)
             self.code.insert(tk.END, f"파일을 열 수 없음: {e}")
 
     def commitgui(self):
+        sel = self.tree.selection()
+
+        if sel:
+            values = self.tree.item(sel[0], "values")
+
+            if values:
+                filepath = values[0]
+                # text -> 실제 파일 저장
+                with open(filepath, "w") as f:
+                    f.write(self.code.get("1.0", tk.END))
+
+        # commit 실행
         if self.vcs.commit():
             self.history.insert(tk.END, "Commit 성공\n")
             self.refresh_files()
