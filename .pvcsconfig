@@ -1,6 +1,7 @@
 LICENSE
 README.md
 .pvcsignore
+.pvcsconfig
 
 test/testfile.txt
 .test/.testdotfile.conf

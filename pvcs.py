@@ -122,13 +122,14 @@ class Pvcs:
         return changed_files
 
     # 추적중인 파일을 iso날자로 구분해 hist에 디렉토리 째로 저장.
-    def commit(self):
+    def commit(self, commit_message=""):
         foldername = datetime.datetime.now(datetime.timezone.utc).isoformat()
         foldername = foldername.replace(":", "-")
         foldername = foldername.replace(".", "-")
 
         commit_path = os.path.join(self.HISTDIR, foldername)
         commit_files = self.get_tracked_files()
+
         print("debuginfo: commit", commit_path, commit_files)
 
         if not commit_files:
@@ -140,7 +141,9 @@ class Pvcs:
 
             shutil.copy2(i, hist_path)
             print("debuginfo: copy", i, hist_path)
-        print("debuginfo: commit complete")
+
+        self.insert_into_firstline(os.path.join(commit_path, self.CONFIGDIR), "[commit message]: " + commit_message)
+        print("debuginfo: commit complete", commit_path, commit_message)
         return True
 
     def checkout(self, commit_id):
@@ -157,7 +160,8 @@ class Pvcs:
 
                 shutil.copy2(target_file, rel_path)
                 print("debuginfo: copy", target_file, rel_path)
-
+                
+        self.remove_comment(self.CONFIGDIR)
         print("debuginfo: checkout complete")
         return True
 
@@ -181,8 +185,22 @@ class Pvcs:
         with open(filepath, "r", errors="replace") as f:
             origin_content = f.read()
         with open(filepath, "w") as f:
-            f.write("[commit message]: " + new_line + "\n" + origin_content)
+            f.write(new_line + "\n" + origin_content)
         return True
+
+    def remove_comment(self, filepath):
+        if not os.path.exists(filepath):
+            print("debuginfo: remove task failed!", filepath, "does not exist")
+            return False
+        if self.check_line_from_file(filepath, "[commit message]:", 0):
+            print("debuginfo: remove task failed!", filepath, "has no comment")
+            return False
+
+        with open(filepath, 'r') as f:
+            origin_data = f.read().splitlines(True)
+        with open(filepath, 'w') as f:
+            f.writelines(origin_data[1:])
+        print("debuginfo: comment removed", filepath)
 
 
 if __name__ == "__main__":
@@ -194,5 +212,6 @@ if __name__ == "__main__":
     # vcs.get_tracked_files()
     # vcs.check_for_changes()
     # vcs.commit()
-    # vcs.checkout("2026-06-01T07-02-29-383304+00-00")
-    vcs.insert_into_firstline("testtest", "hello!")
+    # vcs.remove_comment(".pvcshist/2026-06-01T12-42-47-763597+00-00/.pvcsconfig")
+    vcs.checkout("2026-06-01T12-42-47-763597+00-00")
+    # vcs.insert_into_firstline("testtest", "hello!")
