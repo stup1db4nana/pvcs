@@ -160,7 +160,7 @@ class Pvcs:
 
                 shutil.copy2(target_file, rel_path)
                 print("debuginfo: copy", target_file, rel_path)
-                
+
         self.remove_comment(self.CONFIGDIR)
         print("debuginfo: checkout complete")
         return True
@@ -201,6 +201,8 @@ class Pvcs:
         with open(filepath, 'w') as f:
             f.writelines(origin_data[1:])
         print("debuginfo: comment removed", filepath)
+
+        return True
 
 
 if __name__ == "__main__":
