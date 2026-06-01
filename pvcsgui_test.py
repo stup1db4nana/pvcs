@@ -10,6 +10,7 @@ class PvcsGui:
     def __init__(self, root, vcs):
         self.root = root
         self.vcs = vcs
+        self.current_file = None
 
         self.root.title("PVCS")
         self.root.minsize(900, 800)
@@ -29,7 +30,7 @@ class PvcsGui:
         main.pack(fill=tk.BOTH, expand=True)
 
         left = ttk.Frame(main)
-        main.add(left, weight=1)
+        main.add(left, weight=1, minsize=200)
 
         btn_frame = ttk.Frame(left)
         btn_frame.pack(fill=tk.X)
@@ -73,10 +74,12 @@ class PvcsGui:
         self.tree.bind("<<TreeviewSelect>>", self.on_select)
 
         right = ttk.Frame(main)
-        main.add(right, weight=3)
+        main.add(right, weight=3, minsize=100)
 
         self.code = tk.Text(right, font=("Consolas", 11), undo=True)
         self.code.pack(fill=tk.BOTH, expand=True)
+        
+        self.code.bind("<KeyRelease>", lambda e: self.save_current_text_silently())
 
         ttk.Label(right, text="History").pack(anchor="w")
 
@@ -137,6 +140,23 @@ class PvcsGui:
             command=self.checkout_selected
         ).pack(side=tk.LEFT, padx=5, pady=4)
 
+    def save_current_text_silently(self):
+        if hasattr(self, 'current_file') and self.current_file and os.path.exists(self.current_file):
+            try:
+                content = self.code.get("1.0", tk.END + "-1c")
+                with open(self.current_file, "w", encoding="utf-8") as f:
+                    f.write(content)
+                
+                selected_item = self.tree.selection()
+                self.refresh_files()
+                if selected_item:
+                    for item in self.tree.get_children():
+                        if self.tree.item(item, "values")[0] == self.current_file:
+                            self.tree.selection_set(item)
+                            break
+            except Exception:
+                pass
+
     def track_file(self):
         sel = self.tree.selection()
         if not sel:
@@ -161,7 +181,6 @@ class PvcsGui:
         untracked = self.vcs.scan_pwd()
         tracked = self.vcs.get_tracked_files()
 
-        # 최신 커밋 폴더 찾기 (pvcs.py의 check_for_changes 로직 반영)
         latest_commit = None
         if os.path.exists(self.vcs.HISTDIR) and os.listdir(self.vcs.HISTDIR):
             sorted_commit_list = sorted(os.listdir(self.vcs.HISTDIR))
@@ -173,19 +192,14 @@ class PvcsGui:
             
             is_modified = False
             
-            # 최신 커밋 버전이 존재할 때 파일 내용 비교 진행
             if latest_commit and os.path.exists(f):
                 comp_file = os.path.join(latest_commit, f)
                 if os.path.exists(comp_file):
-                    # filecmp.cmp는 두 파일이 완전히 같으면 True, 다르면 False를 리턴합니다.
-                    # 따라서 결과가 False이면 파일이 변경(훼손)된 것입니다.
                     if not filecmp.cmp(comp_file, f, shallow=False):
                         is_modified = True
                 else:
-                    # 커밋 폴더는 생성되었으나 해당 파일 백업본이 없는 경우도 변경(새 파일)으로 간주
                     is_modified = True
 
-            # 훼손 상태에 따른 분기 표시
             if is_modified:
                 self.tree.insert("", tk.END, text=f"🔴 {os.path.basename(f)}", values=(f,))
             else:
@@ -217,6 +231,14 @@ class PvcsGui:
         self.refresh_files()
 
     def on_select(self, event):
+        if hasattr(self, 'current_file') and self.current_file and os.path.exists(self.current_file):
+            try:
+                content = self.code.get("1.0", tk.END + "-1c")
+                with open(self.current_file, "w", encoding="utf-8") as f:
+                    f.write(content)
+            except Exception:
+                pass
+
         sel = self.tree.selection()
         if not sel:
             return
@@ -224,7 +246,7 @@ class PvcsGui:
         filepath = self.tree.item(sel[0], "values")[0]
 
         try:
-            with open(filepath, "r") as f:
+            with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
                 data = f.read()
 
             self.code.delete("1.0", tk.END)
@@ -241,8 +263,8 @@ class PvcsGui:
         if sel:
             filepath = self.tree.item(sel[0], "values")[0]
 
-            with open(filepath, "w") as f:
-                f.write(self.code.get("1.0", tk.END))
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(self.code.get("1.0", tk.END + "-1c"))
 
         if self.vcs.commit():
             self.history.insert(tk.END, "Commit 성공\n")
@@ -262,6 +284,16 @@ class PvcsGui:
 
         if self.vcs.checkout(commit_id):
             self.history.insert(tk.END, f"checkout: {commit_id}\n")
+            
+            if hasattr(self, 'current_file') and self.current_file and os.path.exists(self.current_file):
+                try:
+                    with open(self.current_file, "r", encoding="utf-8", errors="ignore") as f:
+                        restored_data = f.read()
+                    self.code.delete("1.0", tk.END)
+                    self.code.insert(tk.END, restored_data)
+                except Exception:
+                    pass
+            
             self.refresh_files()
         else:
             self.history.insert(tk.END, "checkout failed\n")
@@ -270,5 +302,10 @@ class PvcsGui:
 if __name__ == "__main__":
     root = tk.Tk()
     vcs = Pvcs()
+    
+    vcs.create_dirs(vcs.HISTDIR)
+    vcs.create_file(vcs.CONFIGDIR)
+    vcs.create_file(vcs.IGNOREDIR)
+    
     app = PvcsGui(root, vcs)
     root.mainloop()
