@@ -1,3 +1,4 @@
+import filecmp
 import os
 import datetime
 import shutil
@@ -16,14 +17,14 @@ class Pvcs:
     @staticmethod
     def create_dirs(filepath):
         if not os.path.exists(filepath):
-            print("debuginfo: createdir ", filepath)
+            print("debuginfo: createdir", filepath)
             os.makedirs(filepath)
 
     # filepath를 받아 그 위치에 파일 생성.
     @staticmethod
     def create_file(filepath):
         if not os.path.exists(filepath):
-            print("debuginfo: createfile ", filepath)
+            print("debuginfo: createfile", filepath)
             file = open(filepath, "w")
             file.close()
 
@@ -54,7 +55,7 @@ class Pvcs:
             print("debuginfo: addfilefailure")
             return False
         with open(filepath, "a") as file:
-            print("debuginfo: addfile ", filepath, new_line)
+            print("debuginfo: addfile", filepath, new_line)
             file.write("\n" + new_line)
             return None
 
@@ -79,7 +80,7 @@ class Pvcs:
                 combined_path = os.path.normpath(os.path.join(path, i))
 
                 if not self.check_ignore_status(i, 1) and not self.check_ignore_status(path, 0):
-                    print("debuginfo: scan ", combined_path)
+                    print("debuginfo: scan", combined_path)
                     scanned_files.append(combined_path)
 
         return scanned_files
@@ -107,6 +108,14 @@ class Pvcs:
 
         sorted_commit_list = sorted(os.listdir(self.HISTDIR))
         latest_commit = os.path.join(self.HISTDIR, sorted_commit_list[-1])
+        print("debuginfo: latest commit is", sorted_commit_list[-1])
+
+        current_files = self.get_tracked_files()
+
+        for i in current_files:
+            comp_file = os.path.join(latest_commit, i)
+            test = filecmp.cmp(comp_file, i)
+            print("debuginfo: diff between current and", latest_commit, i, test)
         return False
 
     # 추적중인 파일을 iso날자로 구분해 hist에 디렉토리 째로 저장.
@@ -117,7 +126,7 @@ class Pvcs:
 
         commit_path = os.path.join(self.HISTDIR, foldername)
         commit_files = self.get_tracked_files()
-        print("debuginfo: commit ", commit_path, commit_files)
+        print("debuginfo: commit", commit_path, commit_files)
 
         if not commit_files:
             return False
@@ -127,14 +136,14 @@ class Pvcs:
             self.create_dirs(os.path.dirname(hist_path))
 
             shutil.copy2(i, hist_path)
-            print("debuginfo: copy ", i, hist_path)
+            print("debuginfo: copy", i, hist_path)
         print("debuginfo: commit complete")
         return True
 
     def checkout(self, commit_id):
         target_path = os.path.join(self.HISTDIR, commit_id)
         if not os.path.exists(target_path):
-            print("debuginfo: checkout failed! ", commit_id, " does not exist")
+            print("debuginfo: checkout failed!", commit_id, " does not exist")
             return False
         for path, subdir, files in os.walk(target_path):
             for i in files:
@@ -144,7 +153,7 @@ class Pvcs:
                 self.create_dirs(rel_path)
 
                 shutil.copy2(target_file, rel_path)
-                print("debuginfo: copy ", target_file, rel_path)
+                print("debuginfo: copy", target_file, rel_path)
 
         print("debuginfo: checkout complete")
         return True
@@ -156,7 +165,7 @@ if __name__ == "__main__":
     vcs.create_file(vcs.CONFIGDIR)
     vcs.create_file(vcs.IGNOREDIR)
 
-    vcs.get_tracked_files()
-
+    # vcs.get_tracked_files()
+    vcs.check_for_changes()
     # vcs.commit()
     # vcs.checkout("2026-06-01T07-02-29-383304+00-00")
