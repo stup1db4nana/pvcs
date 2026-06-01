@@ -1,4 +1,5 @@
-rando/hi
-.what/hi
 LICENSE
 README.md
+
+test/testfile.txt
+.test/.testdotfile.conf
