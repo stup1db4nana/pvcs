@@ -32,6 +32,7 @@ class PvcsGui:
         # 오른쪽: 코드 + 히스토리 + 버튼
         right = ttk.Frame(main)
         main.add(right, weight=3)
+        ttk.Button(right, text="Track File", command=self.track_file).pack(side=tk.TOP, anchor="e")
 
         # 상단 Refrsh 버튼
         refbar = ttk.Frame(right)
@@ -50,19 +51,44 @@ class PvcsGui:
         # Commit 버튼
         ttk.Button(right, text="Commit", command=self.commitgui).pack(side=tk.BOTTOM, anchor="e")        
 
+    def track_file(self):
+        sel = self.tree.selection()
+
+        if not sel:
+            self.history.insert(tk.END, "파일 선택 안됨\n")
+            return
+        
+        text = self.tree.item(sel[0], "text")
+        filepath = text[2:]
+
+        # 이미 tracked면 무시
+        if self.vcs.check_tracking_status(filepath):
+            self.history.insert(tk.END, "already tracked\n")
+            return
+        
+        # tracked 등록
+        self.vcs.add_line_into_file(self.vcs.CONFIGDIR, filepath)
+        self.history.insert(tk.END, f"tracked: {filepath}\n")
+        self.refresh_files()
 
     def refresh_files(self):
         # 파일 목록 업로드
         self.tree.delete(*self.tree.get_children())
 
-        files = self.vcs.get_tracked_files()
+        untracked = self.vcs.scan_pwd()
+        tracked = self.vcs.get_tracked_files()
 
-        if not files:
-            files = self.vcs.scan_pwd()
+        for f in tracked:
+            self.tree.insert("", tk.END, text=f"☑ {f}", values=(f,))
+        
+        for f in untracked:
+            if f not in tracked:
+                self.tree.insert("", tk.END, text=f"☐ {f}", values=(f,))
+            
 
-        for f in files:
-            check = "☑" if self.vcs.check_tracking_status(f) else "☐"
-            self.tree.insert("", tk.END, text=f"{check} {f}")
+    def add_track(self, filepath):
+        self.vcs.add_line_into_file(self.vcs.CONFIGDIR, filepath)
+        self.refresh_files()
 
     def on_select(self, event):
         # 파일 클릭 시 해당 파일 로드
@@ -71,9 +97,13 @@ class PvcsGui:
         if not sel:
             return
         
-        text = self.tree.item(sel[0], "text")
-        filepath = text[2:] #체크표시 제거
+        values = self.tree.item(sel[0], "values")
 
+        if not values:
+            return
+
+        filepath = values[0]
+        
         try:
             with open(filepath, "r") as f:
                 data = f.read()
@@ -81,9 +111,9 @@ class PvcsGui:
             self.code.delete("1.0", tk.END)
             self.code.insert(tk.END, data)
 
-        except:
+        except Exception as e:
             self.code.delete("1.0", tk.END)
-            self.code.insert(tk.END, "파일을 열 수 없음")
+            self.code.insert(tk.END, f"파일을 열 수 없음: {e}")
 
     def commitgui(self):
         if self.vcs.commit():
@@ -99,5 +129,4 @@ if __name__ == "__main__":
     vcs = Pvcs()
     app = PvcsGui(root, vcs)
     root.mainloop()
-
 
