@@ -4,8 +4,6 @@ import datetime
 import shutil
 
 
-# 추가해야 할 사항: 파일 변경점 검사, 히스트에서 파일 되돌리기
-
 class Pvcs:
     # 디렉토리 위치 설정.
     def __init__(self):
@@ -104,7 +102,7 @@ class Pvcs:
     # 작업중
     def check_for_changes(self):
         if not os.path.exists(self.HISTDIR) or not os.listdir(self.HISTDIR):
-            return False
+            return None
         changed_files = ""
 
         sorted_commit_list = sorted(os.listdir(self.HISTDIR))
@@ -167,13 +165,14 @@ class Pvcs:
     def read_from_file(filepath):
         if not os.path.exists(filepath):
             print("debuginfo: read task failed!", filepath, " does not exist")
-            return False
-        with open(filepath, "r") as f:
+            return None
+        with open(filepath, "r", errors="replace") as f:
             file_content = f.read()
 
         return file_content
 
 
+''' 테스트용
 if __name__ == "__main__":
     vcs = Pvcs()
     vcs.create_dirs(vcs.HISTDIR)
@@ -184,3 +183,4 @@ if __name__ == "__main__":
     # vcs.check_for_changes()
     # vcs.commit()
     # vcs.checkout("2026-06-01T07-02-29-383304+00-00")
+'''

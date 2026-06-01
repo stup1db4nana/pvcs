@@ -4,8 +4,6 @@ from tkinter import ttk
 
 ##############
 import os
-import datetime
-import shutil
 
 ##############
 
@@ -105,8 +103,9 @@ class PvcsGui:
         self.vcs.add_line_into_file(self.vcs.CONFIGDIR, filepath)
 
         print("CONFIG AFTER TRACK:")
-        with open(self.vcs.CONFIGDIR, "r") as f:
-            print(f.read())
+        print(self.vcs.read_from_file(self.vcs.CONFIGDIR))
+        # with open(self.vcs.CONFIGDIR, "r") as f:
+        #    print(f.read())
 
         self.history.insert(tk.END, f"tracked: {filepath}\n")
         self.refresh_files()
@@ -161,7 +160,7 @@ class PvcsGui:
         if not file_content:
             self.code.delete("1.0", tk.END)
             self.code.insert(tk.END, f"파일을 열 수 없음")
-            
+
         self.code.delete("1.0", tk.END)
         self.code.insert(tk.END, file_content)
         self.current_file = filepath
