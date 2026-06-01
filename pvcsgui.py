@@ -39,7 +39,7 @@ class PvcsGui:
         # Refresh 버튼
         ttk.Button(btn_frame, text="Refresh", command=self.refresh_files).pack(side=tk.LEFT)
         # Track 버튼 
-        ttk.Button(btn_frame, text="Track File", command=self.refresh_files).pack(side=tk.LEFT)
+        ttk.Button(btn_frame, text="Track File", command=self.track_file).pack(side=tk.LEFT)
 
         ttk.Label(left, text="Workspace").pack(anchor="w")
 
