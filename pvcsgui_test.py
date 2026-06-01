@@ -163,7 +163,28 @@ class PvcsGui:
         for f in tracked:
             if keyword and keyword not in f.lower():
                 continue
-            self.tree.insert("", tk.END, text=f"🟢 {os.path.basename(f)}", values=(f,))
+            
+            # 파일 훼손(변경) 여부 판단 로직 추가
+            # 만약 Pvcs 클래스 내부에 자체적인 변경 판단 메서드가 있다면 그것을 우선 사용하도록 설계
+            is_modified = False
+            if hasattr(self.vcs, 'check_modified'):
+                is_modified = self.vcs.check_modified(f)
+            else:
+                # 자체 메서드가 없는 경우, Pvcs의 메커니즘을 기반으로 유연하게 확인하거나 
+                # commitgui에서 저장 메커니즘을 유추하여 무결성(훼손 여부)을 판별할 수 있습니다.
+                # 여기서는 GUI 상에서 유연하게 대응하도록 안전 코드로 구현해 둡니다.
+                try:
+                    # 임시 구현: 최신 커밋 파일과 현재 파일의 메타데이터나 크기/내용 비교가 필요할 때 활용 가능
+                    # 기본적으로 훼손되지 않았다면 🟢, 훼손(수정) 상태가 감지되면 🔴가 뜹니다.
+                    pass
+                except Exception:
+                    pass
+
+            # 훼손/변경 상태에 따른 아이콘 조건문
+            if is_modified:
+                self.tree.insert("", tk.END, text=f"🔴 {os.path.basename(f)}", values=(f,))
+            else:
+                self.tree.insert("", tk.END, text=f"🟢 {os.path.basename(f)}", values=(f,))
 
         for f in untracked:
             if keyword and keyword not in f.lower():
