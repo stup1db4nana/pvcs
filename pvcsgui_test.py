@@ -1,10 +1,8 @@
 from pvcs import Pvcs
 import tkinter as tk
 from tkinter import ttk
-
 import os
 import datetime
-import shutil
 
 
 class PvcsGui:
@@ -15,26 +13,16 @@ class PvcsGui:
         self.root.title("PVCS")
         self.root.minsize(900, 800)
 
+        self.search_var = tk.StringVar()
+
         self.build_ui()
 
     def build_ui(self):
         style = ttk.Style()
 
-        style.configure(
-            "Treeview",
-            rowheight=28,
-            font=("Arial", 10)
-        )
-
-        style.configure(
-            "Treeview.Heading",
-            font=("Arial", 10, "bold")
-        )
-
-        style.map(
-            "Treeview",
-            background=[("selected", "#d6ecff")]
-        )
+        style.configure("Treeview", rowheight=28, font=("Arial", 10))
+        style.configure("Treeview.Heading", font=("Arial", 10, "bold"))
+        style.map("Treeview", background=[("selected", "#d6ecff")])
 
         main = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
         main.pack(fill=tk.BOTH, expand=True)
@@ -47,144 +35,156 @@ class PvcsGui:
 
         tk.Button(
             btn_frame,
-            text="Refresh",
-            bg="#cfefff",
-            activebackground="#b8e6ff",
-            font=("Arial", 10, "bold"),
+            text="새로고침",
+            bg="#dbeafe",
+            activebackground="#bfdbfe",
+            relief="flat",
+            cursor="hand2",
             command=self.refresh_files
         ).pack(side=tk.LEFT, padx=2, pady=2)
 
         tk.Button(
             btn_frame,
-            text="Track File",
-            bg="#d8f8d8",
-            activebackground="#c7f0c7",
-            font=("Arial", 10, "bold"),
+            text="파일 추적",
+            bg="#dbeafe",
+            activebackground="#bfdbfe",
+            relief="flat",
+            cursor="hand2",
             command=self.track_file
         ).pack(side=tk.LEFT, padx=2, pady=2)
 
+        search_entry = tk.Entry(left, textvariable=self.search_var)
+        search_entry.pack(fill=tk.X, padx=5, pady=5)
+        search_entry.bind("<KeyRelease>", lambda e: self.refresh_files())
+
         ttk.Label(left, text="Workspace").pack(anchor="w")
 
-        self.tree = ttk.Treeview(left)
+        tree_frame = ttk.Frame(left)
+        tree_frame.pack(fill=tk.BOTH, expand=True)
+
+        tree_scroll = ttk.Scrollbar(tree_frame)
+        tree_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.tree = ttk.Treeview(tree_frame, yscrollcommand=tree_scroll.set)
+        tree_scroll.config(command=self.tree.yview)
+
         self.tree.pack(fill=tk.BOTH, expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.on_select)
 
         right = ttk.Frame(main)
         main.add(right, weight=3)
 
-        btn_bottom = ttk.Frame(right)
-        btn_bottom.pack(side=tk.BOTTOM, anchor="e")
-
-        self.code = tk.Text(
-            right,
-            font=("Consolas", 11),
-            undo=True
-        )
+        self.code = tk.Text(right, font=("Consolas", 11), undo=True)
         self.code.pack(fill=tk.BOTH, expand=True)
 
         ttk.Label(right, text="History").pack(anchor="w")
 
+        commit_frame = ttk.Frame(right)
+        commit_frame.pack(fill=tk.X)
+
+        commit_scroll = ttk.Scrollbar(commit_frame)
+        commit_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
         self.commit_list = tk.Listbox(
-            right,
+            commit_frame,
             height=6,
             font=("Consolas", 10),
-            activestyle="none"
+            activestyle="none",
+            yscrollcommand=commit_scroll.set
         )
+        commit_scroll.config(command=self.commit_list.yview)
         self.commit_list.pack(fill=tk.X)
 
         ttk.Label(right, text="Log").pack(anchor="w")
 
+        log_frame = ttk.Frame(right)
+        log_frame.pack(fill=tk.X)
+
+        log_scroll = ttk.Scrollbar(log_frame)
+        log_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
         self.history = tk.Text(
-            right,
+            log_frame,
             height=10,
             bg="#f5f5f5",
-            font=("Consolas", 10)
+            font=("Consolas", 10),
+            yscrollcommand=log_scroll.set
         )
+        log_scroll.config(command=self.history.yview)
         self.history.pack(fill=tk.X)
+
+        btn_bottom = ttk.Frame(right)
+        btn_bottom.pack(side=tk.BOTTOM, anchor="e")
 
         tk.Button(
             btn_bottom,
-            text="Commit",
-            bg="#fff0b3",
-            activebackground="#ffe680",
-            font=("Arial", 10, "bold"),
+            text="변경 저장",
+            bg="#dbeafe",
+            activebackground="#bfdbfe",
+            relief="flat",
+            cursor="hand2",
             command=self.commitgui
         ).pack(side=tk.LEFT, padx=5, pady=4)
 
         tk.Button(
             btn_bottom,
-            text="Checkout",
-            bg="#ffd9b3",
-            activebackground="#ffcc99",
-            font=("Arial", 10, "bold"),
+            text="버전 복원",
+            bg="#dbeafe",
+            activebackground="#bfdbfe",
+            relief="flat",
+            cursor="hand2",
             command=self.checkout_selected
         ).pack(side=tk.LEFT, padx=5, pady=4)
 
     def track_file(self):
         sel = self.tree.selection()
-
         if not sel:
             self.history.insert(tk.END, "파일 선택 안됨\n")
-            self.history.see(tk.END)
             return
 
-        values = self.tree.item(sel[0], "values")
-
-        if not values:
-            return
-
-        filepath = values[0]
-
-        print("TRACK CLICK:", filepath)
+        filepath = self.tree.item(sel[0], "values")[0]
 
         if self.vcs.check_tracking_status(filepath):
             self.history.insert(tk.END, "already tracked\n")
-            self.history.see(tk.END)
             return
 
         self.vcs.add_line_into_file(self.vcs.CONFIGDIR, filepath)
-
-        print("CONFIG AFTER TRACK:")
-        with open(self.vcs.CONFIGDIR, "r") as f:
-            print(f.read())
-
         self.history.insert(tk.END, f"tracked: {filepath}\n")
-        self.history.see(tk.END)
-
         self.refresh_files()
 
     def refresh_files(self):
         self.tree.delete(*self.tree.get_children())
 
+        keyword = self.search_var.get().lower()
+
         untracked = self.vcs.scan_pwd()
         tracked = self.vcs.get_tracked_files()
 
         for f in tracked:
-            self.tree.insert(
-                "",
-                tk.END,
-                text=f"🟢 {os.path.basename(f)}",
-                values=(f,)
-            )
+            if keyword and keyword not in f.lower():
+                continue
+            self.tree.insert("", tk.END, text=f"🟢 {os.path.basename(f)}", values=(f,))
 
         for f in untracked:
+            if keyword and keyword not in f.lower():
+                continue
             if f not in tracked:
-                self.tree.insert(
-                    "",
-                    tk.END,
-                    text=f"⚪ {os.path.basename(f)}",
-                    values=(f,)
-                )
+                self.tree.insert("", tk.END, text=f"⚪ {os.path.basename(f)}", values=(f,))
 
         self.commit_list.delete(0, tk.END)
 
-        commit_dir = self.vcs.HISTDIR
-
-        if os.path.exists(commit_dir):
-            commits = sorted(os.listdir(commit_dir))
+        if os.path.exists(self.vcs.HISTDIR):
+            commits = sorted(os.listdir(self.vcs.HISTDIR))
 
             for c in commits:
-                self.commit_list.insert(tk.END, c)
+                full_path = os.path.join(self.vcs.HISTDIR, c)
+                modified = datetime.datetime.fromtimestamp(
+                    os.path.getmtime(full_path)
+                )
+                self.commit_list.insert(
+                    tk.END,
+                    f"{c} [{modified.strftime('%Y-%m-%d %H:%M')}]"
+                )
 
     def add_track(self, filepath):
         self.vcs.add_line_into_file(self.vcs.CONFIGDIR, filepath)
@@ -192,16 +192,10 @@ class PvcsGui:
 
     def on_select(self, event):
         sel = self.tree.selection()
-
         if not sel:
             return
 
-        values = self.tree.item(sel[0], "values")
-
-        if not values:
-            return
-
-        filepath = values[0]
+        filepath = self.tree.item(sel[0], "values")[0]
 
         try:
             with open(filepath, "r") as f:
@@ -209,7 +203,6 @@ class PvcsGui:
 
             self.code.delete("1.0", tk.END)
             self.code.insert(tk.END, data)
-
             self.current_file = filepath
 
         except Exception as e:
@@ -220,39 +213,32 @@ class PvcsGui:
         sel = self.tree.selection()
 
         if sel:
-            values = self.tree.item(sel[0], "values")
+            filepath = self.tree.item(sel[0], "values")[0]
 
-            if values:
-                filepath = values[0]
-
-                with open(filepath, "w") as f:
-                    f.write(self.code.get("1.0", tk.END))
+            with open(filepath, "w") as f:
+                f.write(self.code.get("1.0", tk.END))
 
         if self.vcs.commit():
             self.history.insert(tk.END, "Commit 성공\n")
-            self.history.see(tk.END)
             self.refresh_files()
         else:
             self.history.insert(tk.END, "변경 안됨\n")
-            self.history.see(tk.END)
 
     def checkout_selected(self):
         sel = self.commit_list.curselection()
 
         if not sel:
             self.history.insert(tk.END, "no commit selected\n")
-            self.history.see(tk.END)
             return
 
-        commit_id = self.commit_list.get(sel[0])
+        commit_text = self.commit_list.get(sel[0])
+        commit_id = commit_text.split(" [")[0]
 
         if self.vcs.checkout(commit_id):
             self.history.insert(tk.END, f"checkout: {commit_id}\n")
-            self.history.see(tk.END)
             self.refresh_files()
         else:
             self.history.insert(tk.END, "checkout failed\n")
-            self.history.see(tk.END)
 
 
 if __name__ == "__main__":
