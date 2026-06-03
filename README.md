@@ -14,3 +14,4 @@ pwd에는 .pvcsconfig, .pvcsignore 파일과 .pvcshist 디렉토리가 생성된
 
 ## 발표자료
 https://1drv.ms/p/c/71f47a4cfba21a8b/IQCDzp72QmgZQJ1JtBi2VrhYAYmz04_QfGmg0RuV2DKf-ok?e=Z6fSeh
+https://canva.link/h32mygzwzxmt3an
