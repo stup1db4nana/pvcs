@@ -107,11 +107,11 @@ class Pvcs:
         normal_target = os.path.normpath(filepath.strip())
         
         # 기존 파일 내용을 읽어옴
-        with open(self.CONFIGDIR, "r", encoding="utf-8") as f:
+        with open(self.CONFIGDIR, "r", encoding='UTF8', errors="replace") as f:
             lines = f.readlines()
             
         # 선택한 파일 경로를 제외한 나머지 라인만 필터링하여 다시 저장
-        with open(self.CONFIGDIR, "w", encoding="utf-8") as f:
+        with open(self.CONFIGDIR, "w", encoding='UTF8', errors="replace") as f:
             for line in lines:
                 if not line.strip() or line.startswith("#"):
                     continue
