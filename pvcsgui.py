@@ -112,7 +112,7 @@ class PvcsGui:
         self.history.insert(tk.END, f"tracked: {filepath}\n")
         self.refresh_files()
 
-    def untrack_file(self):  
+    def untrack_file(self):
         sel = self.tree.selection()
 
         if not sel:
@@ -120,7 +120,6 @@ class PvcsGui:
             return
 
         values = self.tree.item(sel[0], "values")
-
         if not values:
             return
 
@@ -133,27 +132,12 @@ class PvcsGui:
             self.history.insert(tk.END, "already untracked\n")
             return
 
-        try:
-            if os.path.exists(self.vcs.CONFIGDIR):
-                with open(self.vcs.CONFIGDIR, "r", encoding="utf-8") as f:
-                    lines = f.readlines()
-                
-                with open(self.vcs.CONFIGDIR, "w", encoding="utf-8") as f:
-                    for line in lines:
-                        if line.strip() != filepath:
-                            f.write(line)
-        except Exception as e:
-            self.history.insert(tk.END, f"Untrack 작업 중 오류 발생: {e}\n")
-            return
+        # Pvcs untrack 기능을 실행
+        if self.vcs.untrack(filepath):
+            self.history.insert(tk.END, f"untracked: {filepath}\n")
+        else:
+            self.history.insert(tk.END, "untrack failed\n")
 
-        # untracked 등록
-        print("CONFIG AFTER UNTRACK:")
-        try:
-            print(self.vcs.read_from_file(self.vcs.CONFIGDIR))
-        except:
-            pass
-
-        self.history.insert(tk.END, f"untracked: {filepath}\n")
         self.refresh_files()
 
     def refresh_files(self):
