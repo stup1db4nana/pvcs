@@ -32,7 +32,7 @@ class Pvcs:
         if not os.path.exists(filepath):
             return False
 
-        with open(filepath, "r") as file:
+        with open(filepath, "r", encoding='UTF8', errors="replace") as file:
             normal_target = os.path.normpath(target.strip())
             for line in file:
                 if not line.strip() or line.startswith("#"):
