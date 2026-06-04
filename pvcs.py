@@ -26,7 +26,7 @@ class Pvcs:
             file = open(filepath, "w")
             file.close()
 
-    # filepath에서 compvalue가 있는지 검사. 모드가 1일 경우 완전 일치, 0일 경우 시작하는 줄에 포함되는지 검사.
+    # filepath에서 target이 있는지 검사. 모드가 1일 경우 완전 일치, 0일 경우 시작하는 줄에 포함되는지 검사.
     @staticmethod
     def check_line_from_file(filepath, target, mode=1):
         if not os.path.exists(filepath):
