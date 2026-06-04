@@ -196,7 +196,7 @@ class Pvcs:
         if not os.path.exists(filepath):
             print("debuginfo: read task failed!", filepath, " does not exist")
             return None
-        with open(filepath, "r", errors="replace") as f:
+        with open(filepath, "r", encoding='UTF8', errors="replace") as f:
             file_content = f.read()
 
         return file_content
@@ -207,7 +207,7 @@ class Pvcs:
         if not os.path.exists(filepath):
             print("debuginfo: insert_firstline failure! file does not exist")
             return False
-        with open(filepath, "r", errors="replace") as f:
+        with open(filepath, "r", encoding='UTF8', errors="replace") as f:
             origin_content = f.read()
         with open(filepath, "w") as f:
             f.write(new_line + "\n" + origin_content)
@@ -223,7 +223,7 @@ class Pvcs:
 
         with open(filepath, 'r') as f:
             origin_data = f.read().splitlines(True)
-        with open(filepath, 'w') as f:
+        with open(filepath, 'w', encoding='UTF8', errors="replace") as f:
             f.writelines(origin_data[1:])
         print("debuginfo: comment removed", filepath)
 
