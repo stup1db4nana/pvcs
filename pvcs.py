@@ -99,6 +99,31 @@ class Pvcs:
 
         return scanned_files
 
+    def untrack(self, filepath):
+        if not os.path.exists(self.CONFIGDIR):
+            print("debuginfo: untrack failed! config file does not exist")
+            return False
+        
+        normal_target = os.path.normpath(filepath.strip())
+        
+        # 기존 파일 내용을 읽어옴
+        with open(self.CONFIGDIR, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            
+        # 선택한 파일 경로를 제외한 나머지 라인만 필터링하여 다시 저장
+        with open(self.CONFIGDIR, "w", encoding="utf-8") as f:
+            for line in lines:
+                if not line.strip() or line.startswith("#"):
+                    continue
+                
+                # 경로 포맷을 통일
+                normal_line = os.path.normpath(line.strip())
+                if normal_line != normal_target:
+                    f.write(line)
+                    
+        print("debuginfo: untrack complete", filepath)
+        return True
+
     # 작업중
     def check_for_changes(self):
         if not os.path.exists(self.HISTDIR) or not os.listdir(self.HISTDIR):
