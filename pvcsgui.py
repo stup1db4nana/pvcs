@@ -41,6 +41,8 @@ class PvcsGui:
         ttk.Button(btn_frame, text="Refresh", command=self.refresh_files).pack(side=tk.LEFT)
         # Track 버튼 
         ttk.Button(btn_frame, text="Track File", command=self.track_file).pack(side=tk.LEFT)
+        #Untrack버
+        ttk.Button(btn_frame, text="Untrack File", command=self.untrack_file).pack(side=tk.LEFT)
 
         ttk.Label(left, text="Workspace").pack(anchor="w")
 
@@ -108,6 +110,50 @@ class PvcsGui:
         #    print(f.read())
 
         self.history.insert(tk.END, f"tracked: {filepath}\n")
+        self.refresh_files()
+
+    def untrack_file(self):  
+        sel = self.tree.selection()
+
+        if not sel:
+            self.history.insert(tk.END, "파일 선택 안됨\n")
+            return
+
+        values = self.tree.item(sel[0], "values")
+
+        if not values:
+            return
+
+        filepath = values[0]
+
+        print("UNTRACK CLICK:", filepath)
+        
+        # 이미 untracked 상태라면 무시
+        if not self.vcs.check_tracking_status(filepath):
+            self.history.insert(tk.END, "already untracked\n")
+            return
+
+        try:
+            if os.path.exists(self.vcs.CONFIGDIR):
+                with open(self.vcs.CONFIGDIR, "r", encoding="utf-8") as f:
+                    lines = f.readlines()
+                
+                with open(self.vcs.CONFIGDIR, "w", encoding="utf-8") as f:
+                    for line in lines:
+                        if line.strip() != filepath:
+                            f.write(line)
+        except Exception as e:
+            self.history.insert(tk.END, f"Untrack 작업 중 오류 발생: {e}\n")
+            return
+
+        # untracked 등록
+        print("CONFIG AFTER UNTRACK:")
+        try:
+            print(self.vcs.read_from_file(self.vcs.CONFIGDIR))
+        except:
+            pass
+
+        self.history.insert(tk.END, f"untracked: {filepath}\n")
         self.refresh_files()
 
     def refresh_files(self):
