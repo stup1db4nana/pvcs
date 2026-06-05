@@ -26,13 +26,13 @@ class Pvcs:
             file = open(filepath, "w")
             file.close()
 
-    # filepath에서 compvalue가 있는지 검사. 모드가 1일 경우 완전 일치, 0일 경우 시작하는 줄에 포함되는지 검사.
+    # filepath에서 target이 있는지 검사. 모드가 1일 경우 완전 일치, 0일 경우 시작하는 줄에 포함되는지 검사.
     @staticmethod
     def check_line_from_file(filepath, target, mode=1):
         if not os.path.exists(filepath):
             return False
 
-        with open(filepath, "r") as file:
+        with open(filepath, "r", encoding='UTF8', errors="replace") as file:
             normal_target = os.path.normpath(target.strip())
             for line in file:
                 if not line.strip() or line.startswith("#"):
@@ -98,6 +98,31 @@ class Pvcs:
                     scanned_files.append(combined_path)
 
         return scanned_files
+
+    def untrack(self, filepath):
+        if not os.path.exists(self.CONFIGDIR):
+            print("debuginfo: untrack failed! config file does not exist")
+            return False
+        
+        normal_target = os.path.normpath(filepath.strip())
+        
+        # 기존 파일 내용을 읽어옴
+        with open(self.CONFIGDIR, "r", encoding='UTF8', errors="replace") as f:
+            lines = f.readlines()
+            
+        # 선택한 파일 경로를 제외한 나머지 라인만 필터링하여 다시 저장
+        with open(self.CONFIGDIR, "w", encoding='UTF8', errors="replace") as f:
+            for line in lines:
+                if not line.strip() or line.startswith("#"):
+                    continue
+                
+                # 경로 포맷을 통일
+                normal_line = os.path.normpath(line.strip())
+                if normal_line != normal_target:
+                    f.write(line)
+                    
+        print("debuginfo: untrack complete", filepath)
+        return True
 
     # 작업중
     def check_for_changes(self):
@@ -171,7 +196,7 @@ class Pvcs:
         if not os.path.exists(filepath):
             print("debuginfo: read task failed!", filepath, " does not exist")
             return None
-        with open(filepath, "r", errors="replace") as f:
+        with open(filepath, "r", encoding='UTF8', errors="replace") as f:
             file_content = f.read()
 
         return file_content
@@ -182,7 +207,7 @@ class Pvcs:
         if not os.path.exists(filepath):
             print("debuginfo: insert_firstline failure! file does not exist")
             return False
-        with open(filepath, "r", errors="replace") as f:
+        with open(filepath, "r", encoding='UTF8', errors="replace") as f:
             origin_content = f.read()
         with open(filepath, "w") as f:
             f.write(new_line + "\n" + origin_content)
@@ -198,7 +223,7 @@ class Pvcs:
 
         with open(filepath, 'r') as f:
             origin_data = f.read().splitlines(True)
-        with open(filepath, 'w') as f:
+        with open(filepath, 'w', encoding='UTF8', errors="replace") as f:
             f.writelines(origin_data[1:])
         print("debuginfo: comment removed", filepath)
 
